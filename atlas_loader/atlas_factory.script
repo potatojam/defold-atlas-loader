@@ -1,0 +1,60 @@
+local atlas_loader = require("atlas_loader.atlas_loader")
+
+local ATLAS = hash("atlas")
+local SCRIPT_NAME = "atlas_data"
+
+go.property("atlas_name", hash("NAME"))
+go.property("atlas_factory", msg.url("#factory"))
+
+---@class atlas_factory
+---@field current_object hash|nil
+---@field atlas_name hash
+---@field atlas_factory url
+
+---Load new atlas
+---@param self atlas_factory
+local function load_atlas(self)
+    factory.load(self.atlas_factory, function(_, url, result)
+        if result then
+            self.current_object = factory.create(url)
+            local script_path = msg.url(self.current_object)
+            script_path.fragment = SCRIPT_NAME
+            local atlas = go.get(script_path, ATLAS)
+            atlas_loader.atlas_loaded(self.atlas_name, atlas)
+        else
+            error("Atlas not loaded: " .. tostring(self.atlas_factory), 2)
+        end
+    end)
+end
+
+---Unload atlas if it is loaded
+---@param self atlas_factory
+local function unload_atlas(self)
+    if self.current_object then
+        go.delete(self.current_object)
+        self.current_object = nil
+        timer.delay(0, false, function()
+            factory.unload(self.atlas_factory)
+            atlas_loader.atlas_unloaded(self.atlas_name)
+        end)
+    end
+end
+
+---Initialize script
+---@param self atlas_factory
+function init(self)
+    atlas_loader.register_factory(self.atlas_name)
+end
+
+---Handle messages
+---@param self atlas_factory
+---@param message_id hash
+---@param message table
+---@param sender url
+function on_message(self, message_id, message, sender)
+    if message_id == atlas_loader.LOAD_ATLAS then
+        load_atlas(self)
+    elseif message_id == atlas_loader.UNLOAD_ATLAS then
+        unload_atlas(self)
+    end
+end

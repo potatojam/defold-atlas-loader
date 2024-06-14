@@ -1,0 +1,17 @@
+/.internal
+/build
+/bundle
+*.tiled-session
+.externalToolBuilders
+.DS_Store
+Thumbs.db
+.lock-wscript
+*.pyc
+.project
+.cproject
+builtins
+log.txt
+/_build
+/_bundle
+
+/.defold

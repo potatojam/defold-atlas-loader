@@ -1,0 +1,4 @@
+go.property("atlas", resource.atlas())
+
+function init(self)
+end

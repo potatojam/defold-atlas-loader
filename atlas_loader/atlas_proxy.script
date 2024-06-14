@@ -1,0 +1,44 @@
+local liveupdate_loader = require("atlas_loader.liveupdate_loader")
+
+local PROXY_LOADED = hash("proxy_loaded")
+local INIT = hash("init")
+local ENABLE = hash("enable")
+local ASYNC_LOAD = hash("async_load")
+
+go.property("proxy_name", hash("NAME"))
+go.property("proxy_url", msg.url("#proxy"))
+
+---@class atlas_proxy
+---@field current_object hash|nil
+---@field proxy_name hash
+---@field proxy_url url
+
+---Called when proxy loaded
+---@param self atlas_proxy
+---@param message table
+---@param sender url
+local function on_proxy_loaded(self, message, sender)
+    msg.post(sender, INIT)
+    msg.post(sender, ENABLE)
+    liveupdate_loader.proxy_loaded(self.proxy_name, sender)
+end
+
+---Initialize script
+---@param self atlas_proxy
+function init(self)
+    local missing_resources = collectionproxy.missing_resources(self.proxy_url)
+    liveupdate_loader.register_proxy(self.proxy_name, missing_resources)
+end
+
+---Handle messages
+---@param self atlas_proxy
+---@param message_id hash
+---@param message table
+---@param sender url
+function on_message(self, message_id, message, sender)
+    if message_id == PROXY_LOADED then
+        on_proxy_loaded(self, message, sender)
+    elseif message_id == liveupdate_loader.LOAD_PROXY then
+        msg.post(self.proxy_url, ASYNC_LOAD)
+    end
+end
