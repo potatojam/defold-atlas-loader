@@ -145,7 +145,9 @@ end
 ---@param attempt number|nil
 local function request_data(data, index, attempt)
     attempt = attempt or 1
-    local save_path = sys.get_save_file(external_key, data.name)
+    -- global used here to workaround this issue until it will be fixed in the engine:
+    -- https://github.com/defold/defold/pull/8906/files#r1729148892
+    _G.atlas_loader_save_path = sys.get_save_file(external_key, data.name)
     http.request(data.path .. data.name, "GET", function(self, id, response)
         if (response.status == 200 or response.status == 304) and response.error == nil then
             on_file_received(data, response.path, index)
@@ -157,7 +159,7 @@ local function request_data(data, index, attempt)
                 on_error(data, response.error)
             end
         end
-    end, {}, nil, {path = save_path})
+    end, {}, nil, {path = _G.atlas_loader_save_path})
 end
 
 ---Check if the proxy loaded
