@@ -13,7 +13,7 @@ input_method = HiddenInputField
 
 [project]
 title = AtlasLoader
-version = 1.0.0
+version = 1.0.2
 
 [library]
 include_dirs = atlas_loader
