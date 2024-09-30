@@ -35,6 +35,8 @@ local BASE = "_base"
 
 M.events = listener.create()
 
+M.use_html_loader = false
+
 ---@class mount
 ---@field name string
 ---@field priority number
@@ -67,7 +69,7 @@ local function add_progress(value)
     if progress > 100 then
         progress = 100
     end
-    if html_loader then
+    if M.use_html_loader and html_loader then
         html_loader.set_progress(progress)
     end
     M.events.trigger(M.PROGRESS_CHANGED, {progress = progress})
@@ -108,7 +110,7 @@ local function check_for_complete()
         busy = false
         add_progress(PROGRESS_COMPLETED)
         M.events.trigger(M.LOAD_COMPLETE)
-        if html_loader then
+        if M.use_html_loader and html_loader then
             html_loader.hide()
         end
     end
@@ -124,7 +126,7 @@ local function on_error(data, error)
         add_progress(PROGRESS_FILE_ERROR)
     end
     check_for_complete()
-    if html_loader then
+    if M.use_html_loader and html_loader then
         html_loader.set_text("Loading error")
     end
 end
@@ -203,7 +205,7 @@ function M.load()
     end
     busy = true
     progress = 0
-    if html_loader then
+    if M.use_html_loader and html_loader then
         html_loader.show()
     end
     if not liveupdate then
