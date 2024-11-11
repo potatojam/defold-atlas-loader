@@ -1,4 +1,20 @@
-go.property("atlas", resource.atlas())
+local atlas_loader = require "atlas_loader.atlas_loader"
 
+go.property("atlas", resource.atlas())
+go.property("atlas_name", hash("NAME"))
+
+---@class atlas_data
+---@field atlas_name hash
+---@field atlas hash
+
+---Initilaize object
+---@param self atlas_data
 function init(self)
+    atlas_loader.atlas_loaded(self.atlas_name, self.atlas)
+end
+
+---Final object
+---@param self atlas_data
+function final(self)
+    atlas_loader.atlas_unloaded(self.atlas_name)
 end

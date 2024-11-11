@@ -1,0 +1,4 @@
+images {
+  image: "/example/blue.png"
+}
+extrude_borders: 2

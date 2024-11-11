@@ -1,0 +1,15 @@
+local atlas_loader = require "atlas_loader.atlas_loader"
+
+local EXTERNAL_ATLAS_NAME = hash("ext_factory_atlas")
+
+function on_message(self, message_id, message, sender)
+    if hash("SET_ATLAS") == message_id then
+        local atlas = atlas_loader.get_atlas(EXTERNAL_ATLAS_NAME)
+        pprint("Atlas: ", atlas)
+        if atlas then
+            go.set("/image#sprite", hash("image"), atlas)
+            sprite.play_flipbook("/image#sprite", "blue")
+        end
+    end
+end
+

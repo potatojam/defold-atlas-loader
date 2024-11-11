@@ -1,0 +1,66 @@
+local dirtylarry = require "dirtylarry/dirtylarry"
+local atlas_loader = require "atlas_loader.atlas_loader"
+local mount_loader = require "atlas_loader.mount_loader"
+
+local MOUNT_KEY = hash("external")
+
+local PROXY_NAME = hash("external_proxy")
+local EXTERNAL_ATLAS_NAME = hash("ext_factory_atlas")
+local PROXY_ATLAS_NAME = hash("ext_collection_atlas")
+
+---@type atlas_mount_info
+local MOUNT_INFO = {
+    file_name = "mount_4.zip",
+    allow_old_mount = true,
+    mount_key = MOUNT_KEY,
+    priority = 10
+}
+
+function init(self)
+    msg.post("#", "acquire_input_focus")
+    atlas_loader.events.add()
+    mount_loader.events.add()
+    atlas_loader.enable_log = true
+    mount_loader.use_html_loader = true
+end
+
+function on_input(self, action_id, action)
+    dirtylarry:button("btn_load_mount", action_id, action, function()
+        mount_loader.load(MOUNT_INFO)
+    end)
+    dirtylarry:button("btn_load_proxy", action_id, action, function()
+        atlas_loader.load_proxy(PROXY_NAME, true)
+    end)
+    dirtylarry:button("btn_unload_proxy", action_id, action, function()
+        atlas_loader.unload_proxy(PROXY_NAME)
+    end)
+    dirtylarry:button("btn_get_atlas", action_id, action, function()
+        msg.post("/main#main", "SET_ATLAS")
+
+        pprint(atlas_loader.get_atlas(PROXY_ATLAS_NAME))
+    end)
+    dirtylarry:button("btn_load_atlas", action_id, action, function()
+        atlas_loader.load_atlas(EXTERNAL_ATLAS_NAME)
+    end)
+    dirtylarry:button("btn_unload_atlas", action_id, action, function()
+        atlas_loader.unload_atlas(EXTERNAL_ATLAS_NAME)
+    end)
+    dirtylarry:button("btn_remove_free_mounts", action_id, action, function()
+        if not mount_loader.is_old_mount_using() then
+            mount_loader.remove_free_mounts()
+        end
+    end)
+end
+
+---@param self table
+---@param message_id hash
+---@param message table
+---@param sender url
+function on_message(self, message_id, message, sender)
+    pprint("Message: ", message_id, message)
+end
+
+function final(self)
+    atlas_loader.events.remove()
+    mount_loader.events.remove()
+end

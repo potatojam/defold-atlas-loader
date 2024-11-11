@@ -1,17 +1,34 @@
-local liveupdate_loader = require("atlas_loader.liveupdate_loader")
+local atlas_loader = require("atlas_loader.atlas_loader")
 
 local PROXY_LOADED = hash("proxy_loaded")
+local PROXY_UNLOADED = hash("proxy_unloaded")
 local INIT = hash("init")
 local ENABLE = hash("enable")
 local ASYNC_LOAD = hash("async_load")
+local DISABLE = hash("disable")
+local FINAL = hash("final")
+local UNLOAD = hash("unload")
+local CHECK_PROXY_STATE = hash("CHECK_PROXY_STATE")
+local LOAD_PROXY = hash("LOAD_PROXY")
+local UNLOAD_PROXY = hash("UNLOAD_PROXY")
 
 go.property("proxy_name", hash("NAME"))
+go.property("mount_key", hash("UNKNOWN"))
 go.property("proxy_url", msg.url("#proxy"))
 
 ---@class atlas_proxy
 ---@field current_object hash|nil
 ---@field proxy_name hash
+---@field mount_key hash
 ---@field proxy_url url
+
+---Called when proxy unloaded
+---@param self atlas_proxy
+---@param message table
+---@param sender url
+local function on_proxy_unloaded(self, message, sender)
+    atlas_loader.proxy_unloaded(self.proxy_name, sender)
+end
 
 ---Called when proxy loaded
 ---@param self atlas_proxy
@@ -20,14 +37,13 @@ go.property("proxy_url", msg.url("#proxy"))
 local function on_proxy_loaded(self, message, sender)
     msg.post(sender, INIT)
     msg.post(sender, ENABLE)
-    liveupdate_loader.proxy_loaded(self.proxy_name, sender)
+    atlas_loader.proxy_loaded(self.proxy_name, sender)
 end
 
 ---Initialize script
 ---@param self atlas_proxy
 function init(self)
-    local missing_resources = collectionproxy.missing_resources(self.proxy_url)
-    liveupdate_loader.register_proxy(self.proxy_name, missing_resources)
+    atlas_loader.register_proxy(self.proxy_name, self.mount_key, collectionproxy.missing_resources(self.proxy_url), self.proxy_url)
 end
 
 ---Handle messages
@@ -38,7 +54,15 @@ end
 function on_message(self, message_id, message, sender)
     if message_id == PROXY_LOADED then
         on_proxy_loaded(self, message, sender)
-    elseif message_id == liveupdate_loader.LOAD_PROXY then
+    elseif message_id == PROXY_UNLOADED then
+        on_proxy_unloaded(self, message, sender)
+    elseif message_id == LOAD_PROXY then
         msg.post(self.proxy_url, ASYNC_LOAD)
+    elseif message_id == UNLOAD_PROXY then
+        msg.post(self.proxy_url, DISABLE)
+        msg.post(self.proxy_url, FINAL)
+        msg.post(self.proxy_url, UNLOAD)
+    elseif message_id == CHECK_PROXY_STATE then
+        atlas_loader.check_proxy_state(self.proxy_name, collectionproxy.missing_resources(self.proxy_url))
     end
 end

@@ -1,0 +1,200 @@
+script: "/example/main.gui_script"
+fonts {
+  name: "larryfont"
+  font: "/dirtylarry/larryfont.font"
+}
+textures {
+  name: "dirtylarry"
+  texture: "/dirtylarry/dirtylarry.atlas"
+}
+nodes {
+  position {
+    x: 481.0
+    y: 86.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  font: "larryfont"
+  id: "log"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 150.0
+    y: 550.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_load_mount"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_load_mount/larrybutton"
+  parent: "btn_load_mount"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Load mount"
+  id: "btn_load_mount/larrylabel"
+  parent: "btn_load_mount/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 150.0
+    y: 400.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_load_proxy"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_load_proxy/larrybutton"
+  parent: "btn_load_proxy"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Load proxy"
+  id: "btn_load_proxy/larrylabel"
+  parent: "btn_load_proxy/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 150.0
+    y: 250.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_unload_proxy"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_unload_proxy/larrybutton"
+  parent: "btn_unload_proxy"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Unload proxy"
+  id: "btn_unload_proxy/larrylabel"
+  parent: "btn_unload_proxy/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 550.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_get_atlas"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_get_atlas/larrybutton"
+  parent: "btn_get_atlas"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Get atlas"
+  id: "btn_get_atlas/larrylabel"
+  parent: "btn_get_atlas/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 400.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_load_atlas"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_load_atlas/larrybutton"
+  parent: "btn_load_atlas"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Load atlas"
+  id: "btn_load_atlas/larrylabel"
+  parent: "btn_load_atlas/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 500.0
+    y: 250.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_unload_atlas"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_unload_atlas/larrybutton"
+  parent: "btn_unload_atlas"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_TEXT
+  text: "Unload atlas"
+  id: "btn_unload_atlas/larrylabel"
+  parent: "btn_unload_atlas/larrybutton"
+  overridden_fields: 8
+  template_node_child: true
+}
+nodes {
+  position {
+    x: 811.0
+    y: 550.0
+  }
+  type: TYPE_TEMPLATE
+  id: "btn_remove_free_mounts"
+  inherit_alpha: true
+  template: "/dirtylarry/button.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "btn_remove_free_mounts/larrybutton"
+  parent: "btn_remove_free_mounts"
+  template_node_child: true
+}
+nodes {
+  size {
+    x: 300.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "Remove free mounts"
+  id: "btn_remove_free_mounts/larrylabel"
+  line_break: true
+  parent: "btn_remove_free_mounts/larrybutton"
+  overridden_fields: 4
+  overridden_fields: 8
+  overridden_fields: 18
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
