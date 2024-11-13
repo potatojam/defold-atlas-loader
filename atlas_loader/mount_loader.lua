@@ -5,7 +5,9 @@ local M = {}
 local PREFIX = "zip:"
 
 ---@type table<hash, atlas_mount_data>
-local files = {}
+local atlas_mounts = {}
+---@type table<hash, atlas_file>
+local atlas_files = {}
 local progress = 0
 local files_count = 0
 local max_priority = 0
@@ -45,7 +47,6 @@ M.attempt_count = 50             ---Attempts count for loading mount
 
 ---@class atlas_mount_data
 ---@field file_name string
----@field path_to_file string
 ---@field priority number
 ---@field allow_old_mount boolean
 ---@field mount_key hash
@@ -54,11 +55,20 @@ M.attempt_count = 50             ---Attempts count for loading mount
 ---@field old_mount_using boolean
 ---@field loaded boolean
 
+---@class atlas_file
+---@field file_name string
+---@field path_to_file string
+---@field mounts table<hash, atlas_mount_data>
+---@field processing boolean
+---@field loaded boolean
+---@field priority number
+
 ---Check if the data already mounted
 ---@param data atlas_mount_data
----@param mounts atlas_mount[]
+---@param mounts atlas_mount[]|nil
 ---@return boolean
 local function is_in_mount(data, mounts)
+    mounts = mounts or liveupdate.get_mounts()
     for key, mount in pairs(mounts) do
         if data.file_name == mount.name then
             return true
@@ -71,13 +81,12 @@ end
 ---@param mount_key hash
 ---@return atlas_mount_data
 local function get_data(mount_key)
-    local data = files[mount_key]
+    local data = atlas_mounts[mount_key]
     if not data then
         ---@type atlas_mount_data
         data = {
             mount_key = mount_key,
             file_name = "",
-            path_to_file = "./",
             priority = 0,
             allow_old_mount = false,
             proxies = {},
@@ -85,8 +94,32 @@ local function get_data(mount_key)
             loaded = false,
             old_mount_using = false
         }
-        files[mount_key] = data
+        atlas_mounts[mount_key] = data
         files_count = files_count + 1
+    end
+    return data
+end
+
+---Return file
+---@param mount atlas_mount_data
+---@return atlas_file
+local function get_file(mount)
+    local h_name = hash(mount.file_name)
+    local data = atlas_files[h_name]
+    if not data then
+        ---@type atlas_file
+        data = {
+            loaded = false,
+            mounts = {[mount.mount_key] = mount},
+            file_name = mount.file_name,
+            path_to_file = "./",
+            processing = false,
+            priority = 0
+        }
+        atlas_files[h_name] = data
+        return data
+    else
+        data.mounts[mount.mount_key] = mount
     end
     return data
 end
@@ -107,7 +140,7 @@ end
 ---Check for complete loading
 local function check_for_complete()
     local process_files = false
-    for key, data in pairs(files) do
+    for key, data in pairs(atlas_mounts) do
         if data.processing then
             process_files = true
             break
@@ -135,41 +168,47 @@ local function mount_loaded(data)
 end
 
 ---Handle error
----@param data atlas_mount_data
+---@param file_data atlas_file
 ---@param error string
-local function on_error(data, error)
-    data.loaded = false
-    data.processing = false
-    if data.allow_old_mount then
-        data.old_mount_using = true
-        for key, url in pairs(data.proxies) do
-            msg.post(url, CHECK_PROXY_STATE)
+local function on_error(file_data, error)
+    file_data.loaded = false
+    file_data.processing = false
+    for key, mount in pairs(file_data.mounts) do
+        mount.loaded = false
+        mount.processing = false
+        if mount.allow_old_mount then
+            mount.old_mount_using = true
+            for key, url in pairs(mount.proxies) do
+                msg.post(url, CHECK_PROXY_STATE)
+            end
+        else
+            add_progress(PROGRESS_FILE_ERROR)
         end
-    else
-        add_progress(PROGRESS_FILE_ERROR)
+        M.events.trigger(M.EVENTS.DATA_NOT_LOADED, {mount_key = mount.mount_key, error = tostring(error)})
     end
     if M.use_html_loader and html_loader then
         html_loader.set_text("Loading error")
     end
-    M.events.trigger(M.EVENTS.DATA_NOT_LOADED, {mount_key = data.mount_key, error = tostring(error)})
     check_for_complete()
 end
 
 ---Mount data
----@param data atlas_mount_data
+---@param data atlas_file
 ---@param save_path string
----@param priority number
-local function on_file_received(data, save_path, priority)
-    liveupdate.add_mount(data.file_name, PREFIX .. save_path, priority, function(self, name, uri, priority)
-        mount_loaded(data)
+local function on_file_received(data, save_path)
+    liveupdate.add_mount(data.file_name, PREFIX .. save_path, data.priority, function(self, name, uri, priority)
+        data.processing = false
+        data.loaded = true
+        for key, mount in pairs(data.mounts) do
+            mount_loaded(mount)
+        end
     end)
 end
 
 ---Request data
----@param data atlas_mount_data
----@param index number
+---@param data atlas_file
 ---@param attempt number|nil
-local function request_data(data, index, attempt)
+local function request_data(data, attempt)
     attempt = attempt or 1
     -- global used here to workaround this issue until it will be fixed in the engine:
     -- https://github.com/defold/defold/pull/8906/files#r1729148892
@@ -177,11 +216,11 @@ local function request_data(data, index, attempt)
     _G.atlas_loader_save_path = sys.get_save_file(M.external_key, data.file_name)
     http.request(data.path_to_file .. data.file_name, "GET", function(self, id, response)
         if (response.status == 200 or response.status == 304) and response.error == nil then
-            on_file_received(data, response.path, index)
+            on_file_received(data, response.path)
         elseif response.status >= 400 or response.status == 0 or response.error ~= nil then
             if attempt <= M.attempt_count then
                 attempt = attempt + 1
-                request_data(data, index, attempt)
+                request_data(data, attempt)
             else
                 on_error(data, response.error)
             end
@@ -229,7 +268,14 @@ end
 ---@param mount_key hash
 ---@return atlas_mount_data|nil
 function M.get_mount_data(mount_key)
-    return files[mount_key]
+    return atlas_mounts[mount_key]
+end
+
+---Return file data
+---@param file_name string
+---@return atlas_file|nil
+function M.get_file_data(file_name)
+    return atlas_files[hash(file_name)]
 end
 
 ---Load external data
@@ -240,7 +286,6 @@ function M.load(info)
     assert(not data.loaded, "Mount already loaded. File name: " .. tostring(data.file_name) .. "; Mount key: " .. tostring(data.mount_key))
     data.allow_old_mount = info.allow_old_mount == true
     data.priority = info.priority and info.priority or data.priority
-    data.path_to_file = info.path_to_file and info.path_to_file or data.path_to_file
     data.file_name = info.file_name and info.file_name or data.file_name
     data.processing = true
     if M.use_html_loader and html_loader then
@@ -254,13 +299,22 @@ function M.load(info)
         if is_in_mount(data, mounts) then
             mount_loaded(data)
         else
-            if not info.priority then
-                data.priority = get_max_priority(mounts)
+            local file_data = get_file(data)
+            if file_data.loaded then
+                data.priority = file_data.priority
+                mount_loaded(data)
+            elseif not file_data.processing then
+                if not info.priority then
+                    data.priority = get_max_priority(mounts)
+                end
+                if data.priority > max_priority then
+                    max_priority = data.priority
+                end
+                file_data.processing = true
+                file_data.path_to_file = info.path_to_file and info.path_to_file or file_data.path_to_file
+                file_data.priority = data.priority
+                request_data(file_data)
             end
-            if data.priority > max_priority then
-                max_priority = data.priority
-            end
-            request_data(data, data.priority)
         end
     end
 end
@@ -268,7 +322,7 @@ end
 ---Check if any old mount is using
 ---@return boolean
 function M.is_old_mount_using()
-    for i, data in pairs(files) do
+    for i, data in pairs(atlas_mounts) do
         if data.old_mount_using then
             return true
         end
@@ -289,7 +343,7 @@ function M.remove_free_mounts()
     for key, mount in pairs(mounts) do
         if mount.name ~= BASE then
             old_mount = true
-            for i, data in pairs(files) do
+            for i, data in pairs(atlas_mounts) do
                 if mount.name == data.file_name then
                     old_mount = false
                     break
