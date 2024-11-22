@@ -201,7 +201,9 @@ function M.atlas_loaded(name, atlas)
         M.unload_atlas(previous_factory)
     end
     M.events.trigger(M.EVENTS.ATLAS_LOADED, {atlas = atlas, name = name})
-    handle_callback(callbacks[name], {atlas = atlas, name = name})
+    local clb = callbacks[name]
+    callbacks[name] = nil
+    handle_callback(clb, {atlas = atlas, name = name})
 end
 
 ---Called when atlas unloaded
@@ -210,7 +212,9 @@ function M.atlas_unloaded(name)
     log("Atlas unloaded: " .. tostring(name))
     loaded_atlases[name] = nil
     M.events.trigger(M.EVENTS.ATLAS_UNLOADED, {name = name})
-    handle_callback(callbacks[name], {name = name})
+    local clb = callbacks[name]
+    callbacks[name] = nil
+    handle_callback(clb, {name = name})
 end
 
 ---Check if atlas loaded
