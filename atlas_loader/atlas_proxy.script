@@ -5,6 +5,7 @@ local PROXY_UNLOADED = hash("proxy_unloaded")
 local INIT = hash("init")
 local ENABLE = hash("enable")
 local ASYNC_LOAD = hash("async_load")
+local SYNC_LOAD = hash("load")
 local DISABLE = hash("disable")
 local FINAL = hash("final")
 local UNLOAD = hash("unload")
@@ -15,12 +16,14 @@ local UNLOAD_PROXY = hash("UNLOAD_PROXY")
 go.property("proxy_name", hash("NAME"))
 go.property("mount_key", hash("UNKNOWN"))
 go.property("proxy_url", msg.url("#proxy"))
+go.property("sync_load", false)
 
 ---@class atlas_proxy
 ---@field current_object hash|nil
 ---@field proxy_name hash
 ---@field mount_key hash
 ---@field proxy_url url
+---@field sync_load boolean
 
 ---Called when proxy unloaded
 ---@param self atlas_proxy
@@ -57,7 +60,11 @@ function on_message(self, message_id, message, sender)
     elseif message_id == PROXY_UNLOADED then
         on_proxy_unloaded(self, message, sender)
     elseif message_id == LOAD_PROXY then
-        msg.post(self.proxy_url, ASYNC_LOAD)
+        if self.sync_load then
+            msg.post(self.proxy_url, SYNC_LOAD)
+        else
+            msg.post(self.proxy_url, ASYNC_LOAD)
+        end
     elseif message_id == UNLOAD_PROXY then
         msg.post(self.proxy_url, DISABLE)
         msg.post(self.proxy_url, FINAL)
