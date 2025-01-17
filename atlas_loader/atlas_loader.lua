@@ -166,6 +166,15 @@ function M.is_proxy_on_waiting_list(name)
     return proxy_wait_list[name] ~= nil
 end
 
+---Check if the mount is available for proxy
+---@param name hash
+---@return boolean
+function M.is_mount_available(name)
+    local proxy = proxies[name]
+    return proxy and proxy.enough_resources and
+        (mount_loader.is_mount_loaded(proxy.mount_key) or proxy.mount_key == NOT_EXCLUDED or mount_loader.is_old_mount_available(proxy.mount_key))
+end
+
 ---Return proxy info
 ---@param name hash
 ---@return atlas_proxy_data
