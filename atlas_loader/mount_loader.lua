@@ -291,7 +291,8 @@ function M.load(info)
     if M.use_html_loader and html_loader then
         html_loader.show()
     end
-    if not liveupdate or not liveupdate.is_built_with_excluded_files() then
+    if not liveupdate
+        or (type(liveupdate.is_built_with_excluded_files) == "function" and not liveupdate.is_built_with_excluded_files()) then
         mount_loaded(data)
     else
         ---@type atlas_mount[]
