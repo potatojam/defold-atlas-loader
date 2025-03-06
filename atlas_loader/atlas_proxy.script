@@ -40,7 +40,10 @@ end
 local function on_proxy_loaded(self, message, sender)
     msg.post(sender, INIT)
     msg.post(sender, ENABLE)
-    atlas_loader.proxy_loaded(self.proxy_name, sender)
+    ---Waiting for factory initializations
+    timer.delay(0, false, function()
+        atlas_loader.proxy_loaded(self.proxy_name, sender)
+    end)
 end
 
 ---Initialize script
